@@ -1,0 +1,112 @@
+Sure, I'll provide you with a general outline of how you can modify your code to move files to the verified folder and then initiate parallel encryption for multiple files. This example assumes you have a queue of files to be encrypted and you want to process up to 6 files in parallel.
+
+1. **Setup the Queue and Mutex:**
+   You'll need a data structure (e.g., an array or linked list) to hold the paths of the files that need to be encrypted. You'll also need a mutex to ensure thread safety when accessing and modifying the queue.
+
+2. **Moving Files and Adding to Queue:**
+   When a file is verified, move it to the verified folder and add its path to the queue of files to be encrypted.
+
+3. **Encryption Thread Function:**
+   Define a thread function that takes care of encryption for the specified number of files. This function will pop paths from the queue, perform encryption, and update the status accordingly.
+
+4. **Main Server Loop:**
+   Inside your main server loop, you can create a separate thread that handles encryption for the specified number of files (6 in this case). Make sure to join these threads before accepting new connections.
+
+Here's a high-level example:
+
+```c
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#define MAX_FILES_IN_QUEUE 50
+#define NUM_ENCRYPTION_THREADS 2
+
+struct Queue {
+    char* files[MAX_FILES_IN_QUEUE];
+    int front, rear;
+    pthread_mutex_t mutex;
+};
+
+struct Queue fileQueue;
+
+// Initialize the queue and mutex
+void initQueue(struct Queue* queue) {
+    queue->front = queue->rear = -1;
+    pthread_mutex_init(&queue->mutex, NULL);
+}
+
+// Add a file to the queue
+void enqueue(struct Queue* queue, char* file) {
+    pthread_mutex_lock(&queue->mutex);
+    if (queue->rear == MAX_FILES_IN_QUEUE - 1) {
+        printf("Queue is full\n");
+    } else {
+        if (queue->front == -1) {
+            queue->front = 0;
+        }
+        queue->rear++;
+        queue->files[queue->rear] = file;
+    }
+    pthread_mutex_unlock(&queue->mutex);
+}
+
+// Remove a file from the queue
+char* dequeue(struct Queue* queue) {
+    char* file = NULL;
+    pthread_mutex_lock(&queue->mutex);
+    if (queue->front == -1 || queue->front > queue->rear) {
+        printf("Queue is empty\n");
+    } else {
+        file = queue->files[queue->front];
+        queue->front++;
+        if (queue->front > queue->rear) {
+            queue->front = queue->rear = -1;
+        }
+    }
+    pthread_mutex_unlock(&queue->mutex);
+    return file;
+}
+
+// Encryption thread function
+void* encryption_thread(void* arg) {
+    // Perform encryption for the specified number of files
+    // Dequeue files from the queue and encrypt
+    // ...
+    return NULL;
+}
+
+int main() {
+    // Initialize the queue
+    initQueue(&fileQueue);
+
+    // Create encryption threads
+    pthread_t encryption_threads[NUM_ENCRYPTION_THREADS];
+    for (int i = 0; i < NUM_ENCRYPTION_THREADS; i++) {
+        pthread_create(&encryption_threads[i], NULL, encryption_thread, NULL);
+    }
+
+    // Main server loop
+    while (1) {
+        // Accept incoming connections and handle verification
+        // ...
+
+        // After moving file to verified folder
+        // Add the file to the queue
+        enqueue(&fileQueue, "path_to_file");
+
+        // Wait for encryption threads to complete
+        for (int i = 0; i < NUM_ENCRYPTION_THREADS; i++) {
+            pthread_join(encryption_threads[i], NULL);
+        }
+    }
+
+    // Cleanup and exit
+    // ...
+
+    return 0;
+}
+```
+
+This example provides a basic structure for handling file encryption using multiple threads. You'll need to fill in the missing pieces such as encryption logic, proper queue management, error handling, and proper cleanup. Remember to adapt the code to your specific needs and threading library.
