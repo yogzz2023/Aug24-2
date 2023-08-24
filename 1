@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#define BUFFER_SIZE 1024
+
+// Define the structure to hold encryption task information
+struct EncryptionTask {
+    char source_file[BUFFER_SIZE];
+    char hash[BUFFER_SIZE];
+};
+
+// Function to perform encryption
+int encrypt_file(char *source_file, char *hash) {
+    // Your existing encryption code here
+    // ...
+    return 1; // Return 1 for success
+}
+
+// Thread function for parallel encryption
+void *encryption_thread(void *arg) {
+    struct EncryptionTask *task = (struct EncryptionTask *)arg;
+    int ret = encrypt_file(task->source_file, task->hash);
+    if (ret == 1) {
+        printf("Encryption successful for %s\n", task->source_file);
+    } else {
+        printf("Encryption failed for %s\n", task->source_file);
+    }
+    free(task);
+    pthread_exit(NULL);
+}
+
+int main() {
+    const int num_threads = 4; // Number of threads for parallel encryption
+    pthread_t threads[num_threads];
+
+    // Create an array of encryption tasks
+    struct EncryptionTask tasks[num_threads];
+    // Fill in the tasks array with source files and hash values
+
+    for (int i = 0; i < num_threads; i++) {
+        struct EncryptionTask *task = malloc(sizeof(struct EncryptionTask));
+        if (task == NULL) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+        // Initialize task with file and hash information
+        // ...
+        tasks[i] = *task;
+
+        int rc = pthread_create(&threads[i], NULL, encryption_thread, (void *)task);
+        if (rc) {
+            perror("pthread_create");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Wait for threads to complete
+    for (int i = 0; i < num_threads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    printf("All encryption threads have finished.\n");
+
+    return 0;
+}
